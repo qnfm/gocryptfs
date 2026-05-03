@@ -28,7 +28,7 @@ import (
 type argContainer struct {
 	debug, init, zerokey, fusedebug, openssl, passwd, fg, version,
 	plaintextnames, quiet, nosyslog, wpanic,
-	longnames, allow_other, reverse, aessiv, nonempty, raw64,
+	longnames, allow_other, reverse, aesgem, aessiv, nonempty, raw64,
 	noprealloc, speed, hkdf, serialize_reads, hh, info,
 	sharedstorage, fsck, one_file_system, deterministic_names,
 	xchacha, noxattr bool
@@ -174,6 +174,7 @@ func parseCliOpts(osArgs []string) (args argContainer) {
 	flagSet.BoolVar(&args.allow_other, "allow_other", false, "Allow other users to access the filesystem. "+
 		"Only works if user_allow_other is set in /etc/fuse.conf.")
 	flagSet.BoolVar(&args.reverse, "reverse", false, "Reverse mode")
+	flagSet.BoolVar(&args.aesgem, "aesgem", false, "AES-GEM encryption")
 	flagSet.BoolVar(&args.aessiv, "aessiv", false, "AES-SIV encryption")
 	flagSet.BoolVar(&args.nonempty, "nonempty", false, "Allow mounting over non-empty directories")
 	flagSet.BoolVar(&args.raw64, "raw64", true, "Use unpadded base64 for file names")

@@ -25,6 +25,8 @@ const (
 	FlagLongNameMax
 	// FlagAESSIV selects an AES-SIV based crypto backend.
 	FlagAESSIV
+	// FlagAESGEM selects an AES-GEM based crypto backend.
+	FlagAESGEM
 	// FlagRaw64 enables raw (unpadded) base64 encoding for file names
 	FlagRaw64
 	// FlagHKDF enables HKDF-derived keys for use with GCM, EME and SIV
@@ -49,6 +51,7 @@ var knownFlags = map[flagIota]string{
 	FlagLongNames:         "LongNames",
 	FlagLongNameMax:       "LongNameMax",
 	FlagAESSIV:            "AESSIV",
+	FlagAESGEM:            "AESGEM",
 	FlagRaw64:             "Raw64",
 	FlagHKDF:              "HKDF",
 	FlagFIDO2:             "FIDO2",

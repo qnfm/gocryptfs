@@ -1,6 +1,6 @@
 module github.com/rfjakob/gocryptfs/v2
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/aperturerobotics/jacobsa-crypto v1.1.0
@@ -11,7 +11,15 @@ require (
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.45.0
-	golang.org/x/sys v0.38.0
+	golang.org/x/sys v0.43.0
 	golang.org/x/term v0.37.0
 	golang.org/x/text v0.31.0
+	trailofbits.com/aes-gem v0.0.0-00010101000000-000000000000
 )
+
+require (
+	github.com/lukechampine/fastxor v0.0.0-20210322201628-b664bed5a5cc // indirect
+	gitlab.com/yawning/bsaes.git v0.0.0-20190805113838-0a714cd429ec // indirect
+)
+
+replace trailofbits.com/aes-gem => ./internal/gem/ref/golang
