@@ -17,6 +17,7 @@ func helpShort() {
 	fmt.Print(tUsage)
 	fmt.Printf(`
 Common Options (use -hh to show all):
+  -aesgem            Use AES-GEM encryption (with -init)
   -aessiv            Use AES-SIV encryption (with -init)
   -allow_other       Allow other users to access the mount
   -i, -idle          Unmount automatically after specified idle duration

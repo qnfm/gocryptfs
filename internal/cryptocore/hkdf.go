@@ -11,6 +11,7 @@ const (
 	// For convenience, we use a readable string.
 	hkdfInfoEMENames               = "EME filename encryption"
 	hkdfInfoGCMContent             = "AES-GCM file content encryption"
+	hkdfInfoGEMContent             = "AES-GEM file content encryption"
 	hkdfInfoSIVContent             = "AES-SIV file content encryption"
 	hkdfInfoXChaChaPoly1305Content = "XChaCha20-Poly1305 file content encryption"
 )

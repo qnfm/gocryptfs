@@ -17,6 +17,8 @@ import (
 	"github.com/rfjakob/gocryptfs/v2/internal/cryptocore"
 	"github.com/rfjakob/gocryptfs/v2/internal/siv_aead"
 	"github.com/rfjakob/gocryptfs/v2/internal/stupidgcm"
+
+	gem "trailofbits.com/aes-gem"
 )
 
 // 128-bit file ID + 64 bit block number = 192 bits = 24 bytes
@@ -44,6 +46,7 @@ func Run() {
 	}{
 		{name: cryptocore.BackendOpenSSL.String(), f: bStupidGCM, preferred: stupidgcm.PreferOpenSSLAES256GCM()},
 		{name: cryptocore.BackendGoGCM.String(), f: bGoGCM, preferred: !stupidgcm.PreferOpenSSLAES256GCM()},
+		{name: cryptocore.BackendAESGEM256.String(), f: bAESGEM, preferred: false},
 		{name: cryptocore.BackendAESSIV.String(), f: bAESSIV, preferred: false},
 		{name: cryptocore.BackendXChaCha20Poly1305OpenSSL.String(), f: bStupidXchacha, preferred: stupidgcm.PreferOpenSSLXchacha20poly1305()},
 		{name: cryptocore.BackendXChaCha20Poly1305.String(), f: bXchacha20poly1305, preferred: !stupidgcm.PreferOpenSSLXchacha20poly1305()},
@@ -152,6 +155,12 @@ func bGoGCMBlockSize(b *testing.B, blockSize int) {
 // bAESSIV benchmarks AES-SIV from github.com/aperturerobotics/jacobsa-crypto/siv
 func bAESSIV(b *testing.B) {
 	c := siv_aead.New(randBytes(64))
+	bEncrypt(b, c)
+}
+
+// bAESGEM benchmarks AES-GEM from trailofbits.com/aes-gem
+func bAESGEM(b *testing.B) {
+	c, _ := gem.NewAES256(randBytes(32))
 	bEncrypt(b, c)
 }
 

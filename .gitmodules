@@ -1,0 +1,3 @@
+[submodule "internal/gem"]
+	path = internal/gem
+	url = https://github.com/qnfm/aes-gem.git

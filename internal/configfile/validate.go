@@ -23,24 +23,44 @@ func (cf *ConfFile) Validate() error {
 	}
 	// File content encryption
 	{
-		if cf.IsFeatureFlagSet(FlagXChaCha20Poly1305) && cf.IsFeatureFlagSet(FlagAESSIV) {
-			return fmt.Errorf("can't have both XChaCha20Poly1305 and AESSIV feature flags")
-		}
-		if cf.IsFeatureFlagSet(FlagAESSIV) && !cf.IsFeatureFlagSet(FlagGCMIV128) {
+		xchacha := cf.IsFeatureFlagSet(FlagXChaCha20Poly1305)
+		aessiv := cf.IsFeatureFlagSet(FlagAESSIV)
+		aesgem := cf.IsFeatureFlagSet(FlagAESGEM)
+		gcmiv128 := cf.IsFeatureFlagSet(FlagGCMIV128)
+		hkdf := cf.IsFeatureFlagSet(FlagHKDF)
 
-			return fmt.Errorf("AESSIV requires GCMIV128 feature flag")
+		// Content encryption modes are mutually exclusive.
+		if boolToInt(xchacha)+boolToInt(aessiv)+boolToInt(aesgem) > 1 {
+			return fmt.Errorf("can't combine XChaCha20Poly1305, AESSIV, and AESGEM feature flags")
 		}
-		if cf.IsFeatureFlagSet(FlagXChaCha20Poly1305) {
-			if cf.IsFeatureFlagSet(FlagGCMIV128) {
+
+		if aessiv {
+			if !gcmiv128 {
+				return fmt.Errorf("AESSIV requires GCMIV128 feature flag")
+			}
+		}
+
+		if xchacha {
+			if gcmiv128 {
 				return fmt.Errorf("XChaCha20Poly1305 conflicts with GCMIV128 feature flag")
 			}
-			if !cf.IsFeatureFlagSet(FlagHKDF) {
+			if !hkdf {
 				return fmt.Errorf("XChaCha20Poly1305 requires HKDF feature flag")
 			}
 		}
-		// The absence of other flags means AES-GCM (oldest algorithm)
-		if !cf.IsFeatureFlagSet(FlagXChaCha20Poly1305) && !cf.IsFeatureFlagSet(FlagAESSIV) {
-			if !cf.IsFeatureFlagSet(FlagGCMIV128) {
+
+		if aesgem {
+			if gcmiv128 {
+				return fmt.Errorf("AESGEM conflicts with GCMIV128 feature flag")
+			}
+			if !hkdf {
+				return fmt.Errorf("AESGEM requires HKDF feature flag")
+			}
+		}
+
+		// The absence of other content encryption flags means AES-GCM.
+		if !xchacha && !aessiv && !aesgem {
+			if !gcmiv128 {
 				return fmt.Errorf("AES-GCM requires GCMIV128 feature flag")
 			}
 		}
@@ -75,4 +95,11 @@ func (cf *ConfFile) Validate() error {
 		}
 	}
 	return nil
+}
+
+func boolToInt(v bool) int {
+	if v {
+		return 1
+	}
+	return 0
 }
