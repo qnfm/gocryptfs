@@ -14,4 +14,12 @@ require (
 	golang.org/x/sys v0.49.0
 	golang.org/x/term v0.47.0
 	golang.org/x/text v0.43.0
+	trailofbits.com/aes-gem v0.0.0-00010101000000-000000000000
 )
+
+require (
+	github.com/lukechampine/fastxor v0.0.0-20210322201628-b664bed5a5cc // indirect
+	gitlab.com/yawning/bsaes.git v0.0.0-20190805113838-0a714cd429ec // indirect
+)
+
+replace trailofbits.com/aes-gem => ./internal/gem/ref/golang

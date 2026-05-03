@@ -264,6 +264,14 @@ func initFuseFrontend(args *argContainer) (rootNode fs.InodeEmbedder, wipeKeys f
 		}
 		IVBits = chacha20poly1305.NonceSizeX * 8
 	}
+	if args.aesgem {
+		if args.openssl {
+			tlog.Fatal.Printf("AES-GEM does not support OpenSSL backend")
+			os.Exit(exitcodes.Usage)
+		}
+		cryptoBackend = cryptocore.BackendAESGEM256
+		IVBits = cryptocore.BackendAESGEM256.NonceSize * 8
+	}
 	// forceOwner implies allow_other, as documented.
 	// Set this early, so args.allow_other can be relied on below this point.
 	if args._forceOwner != nil {

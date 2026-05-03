@@ -12,10 +12,10 @@ import (
 	"golang.org/x/crypto/chacha20poly1305"
 
 	"github.com/rfjakob/eme"
-
 	"github.com/rfjakob/gocryptfs/v2/internal/siv_aead"
 	"github.com/rfjakob/gocryptfs/v2/internal/stupidgcm"
 	"github.com/rfjakob/gocryptfs/v2/internal/tlog"
+	gem "trailofbits.com/aes-gem"
 )
 
 const (
@@ -51,6 +51,8 @@ var BackendGoGCM = AEADTypeEnum{"AES-GCM-256", "Go", 16}
 // BackendAESSIV specifies an AESSIV backend.
 // "AES-SIV-512-Go" in gocryptfs -speed.
 var BackendAESSIV = AEADTypeEnum{"AES-SIV-512", "Go", siv_aead.NonceSize}
+
+var BackendAESGEM256 = AEADTypeEnum{"AES-GEM-256", "Go", gem.NonceSize256}
 
 // BackendXChaCha20Poly1305 specifies XChaCha20-Poly1305-Go.
 // "XChaCha20-Poly1305-Go" in gocryptfs -speed.
@@ -88,7 +90,7 @@ func New(key []byte, aeadType AEADTypeEnum, IVBitLen int, useHKDF bool) *CryptoC
 	if len(key) != KeyLen {
 		log.Panicf("Unsupported key length of %d bytes", len(key))
 	}
-	if IVBitLen != 96 && IVBitLen != 128 && IVBitLen != chacha20poly1305.NonceSizeX*8 {
+	if IVBitLen != 96 && IVBitLen != 128 && IVBitLen != chacha20poly1305.NonceSizeX*8 && IVBitLen != gem.NonceSize256*8 && IVBitLen != gem.NonceSize128*8 {
 		log.Panicf("Unsupported IV length of %d bits", IVBitLen)
 	}
 
@@ -114,7 +116,8 @@ func New(key []byte, aeadType AEADTypeEnum, IVBitLen int, useHKDF bool) *CryptoC
 
 	// Initialize an AEAD cipher for file content encryption.
 	var aeadCipher cipher.AEAD
-	if aeadType == BackendOpenSSL || aeadType == BackendGoGCM {
+	switch aeadType {
+	case BackendOpenSSL, BackendGoGCM:
 		var gcmKey []byte
 		if useHKDF {
 			gcmKey = hkdfDerive(key, hkdfInfoGCMContent, KeyLen)
@@ -144,7 +147,7 @@ func New(key []byte, aeadType AEADTypeEnum, IVBitLen int, useHKDF bool) *CryptoC
 		for i := range gcmKey {
 			gcmKey[i] = 0
 		}
-	} else if aeadType == BackendAESSIV {
+	case BackendAESSIV:
 		if IVBitLen != 128 {
 			// SIV supports any nonce size, but we only use 128.
 			log.Panicf("AES-SIV must use 128-bit IVs, you wanted %d", IVBitLen)
@@ -164,7 +167,7 @@ func New(key []byte, aeadType AEADTypeEnum, IVBitLen int, useHKDF bool) *CryptoC
 		for i := range key64 {
 			key64[i] = 0
 		}
-	} else if aeadType == BackendXChaCha20Poly1305 || aeadType == BackendXChaCha20Poly1305OpenSSL {
+	case BackendXChaCha20Poly1305, BackendXChaCha20Poly1305OpenSSL:
 		// We don't support legacy modes with XChaCha20-Poly1305
 		if IVBitLen != chacha20poly1305.NonceSizeX*8 {
 			log.Panicf("XChaCha20-Poly1305 must use 192-bit IVs, you wanted %d", IVBitLen)
@@ -173,17 +176,30 @@ func New(key []byte, aeadType AEADTypeEnum, IVBitLen int, useHKDF bool) *CryptoC
 			log.Panic("XChaCha20-Poly1305 must use HKDF, but it is disabled")
 		}
 		derivedKey := hkdfDerive(key, hkdfInfoXChaChaPoly1305Content, chacha20poly1305.KeySize)
-		if aeadType == BackendXChaCha20Poly1305 {
+		switch aeadType {
+		case BackendXChaCha20Poly1305:
 			aeadCipher, err = chacha20poly1305.NewX(derivedKey)
-		} else if aeadType == BackendXChaCha20Poly1305OpenSSL {
+		case BackendXChaCha20Poly1305OpenSSL:
 			aeadCipher = stupidgcm.NewXchacha20poly1305(derivedKey)
-		} else {
+		default:
 			log.Panicf("BUG: unhandled case: %v", aeadType)
 		}
 		if err != nil {
 			log.Panic(err)
 		}
-	} else {
+	case BackendAESGEM256:
+		if IVBitLen != gem.NonceSize256*8 {
+			log.Panicf("AES-GEM-256 must use 256-bit IVs, you wanted %d", IVBitLen)
+		}
+		if !useHKDF {
+			log.Panic("AES-GEM-256 must use HKDF, but it is disabled")
+		}
+		derivedKey := hkdfDerive(key, hkdfInfoGEMContent, gem.NonceSize256)
+		aeadCipher, err = gem.NewAES256(derivedKey)
+		if err != nil {
+			log.Panic(err)
+		}
+	default:
 		log.Panicf("unknown cipher backend %q", aeadType)
 	}
 

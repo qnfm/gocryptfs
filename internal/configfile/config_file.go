@@ -69,6 +69,7 @@ type CreateArgs struct {
 	LogN               int
 	Creator            string
 	AESSIV             bool
+	AESGEM             bool
 	Fido2CredentialID  []byte
 	Fido2HmacSalt      []byte
 	Fido2AssertOptions []string
@@ -91,6 +92,8 @@ func Create(args *CreateArgs) error {
 	cf.setFeatureFlag(FlagHKDF)
 	if args.XChaCha20Poly1305 {
 		cf.setFeatureFlag(FlagXChaCha20Poly1305)
+	} else if args.AESGEM {
+		cf.setFeatureFlag(FlagAESGEM)
 	} else {
 		// 128-bit IVs are mandatory for AES-GCM (default is 96!) and AES-SIV,
 		// XChaCha20Poly1305 uses even an even longer IV of 192 bits.
@@ -322,6 +325,9 @@ func getKeyEncrypter(scryptHash []byte, useHKDF bool) *contentenc.ContentEnc {
 func (cf *ConfFile) ContentEncryption() (algo cryptocore.AEADTypeEnum, err error) {
 	if err := cf.Validate(); err != nil {
 		return cryptocore.AEADTypeEnum{}, err
+	}
+	if cf.IsFeatureFlagSet(FlagAESGEM) {
+		return cryptocore.BackendAESGEM256, nil
 	}
 	if cf.IsFeatureFlagSet(FlagXChaCha20Poly1305) {
 		return cryptocore.BackendXChaCha20Poly1305, nil
