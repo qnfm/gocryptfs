@@ -224,7 +224,7 @@ func (cf *ConfFile) DecryptMasterKey(password []byte) (masterkey []byte, err err
 
 	// Unlock master key using password-based key
 	useHKDF := cf.IsFeatureFlagSet(FlagHKDF)
-	ce := getKeyEncrypter(scryptHash, useHKDF)
+	ce := cf.getKeyEncrypter(scryptHash, useHKDF)
 
 	tlog.Warn.Enabled = false // Silence DecryptBlock() error messages on incorrect password
 	masterkey, err = ce.DecryptBlock(cf.EncryptedKey, 0, nil)
@@ -256,7 +256,7 @@ func (cf *ConfFile) EncryptKey(key []byte, password []byte, logN int) {
 
 	// Lock master key using password-based key
 	useHKDF := cf.IsFeatureFlagSet(FlagHKDF)
-	ce := getKeyEncrypter(scryptHash, useHKDF)
+	ce := cf.getKeyEncrypter(scryptHash, useHKDF)
 	cf.EncryptedKey = ce.EncryptBlock(key, 0, nil)
 
 	// Purge scrypt-derived key
@@ -309,14 +309,24 @@ func (cf *ConfFile) WriteFile() error {
 
 // getKeyEncrypter is a helper function that returns the right ContentEnc
 // instance for the "useHKDF" setting.
-func getKeyEncrypter(scryptHash []byte, useHKDF bool) *contentenc.ContentEnc {
+func (cf *ConfFile) getKeyEncrypter(scryptHash []byte, useHKDF bool) *contentenc.ContentEnc {
 	IVLen := 96
 	// gocryptfs v1.2 and older used 96-bit IVs for master key encryption.
 	// v1.3 adds the "HKDF" feature flag, which also enables 128-bit nonces.
 	if useHKDF {
 		IVLen = contentenc.DefaultIVBits
 	}
-	cc := cryptocore.New(scryptHash, cryptocore.BackendGoGCM, IVLen, useHKDF)
+
+	var cc *cryptocore.CryptoCore
+	if !cf.IsFeatureFlagSet(FlagAESGEM) {
+		cc = cryptocore.New(scryptHash, cryptocore.BackendGoGCM, IVLen, useHKDF)
+	} else {
+		be, err := cf.ContentEncryption()
+		if err != nil {
+			tlog.Warn.Printf("failed to acquire encryption backend: %s", err.Error())
+		}
+		cc = cryptocore.New(scryptHash, be, be.NonceSize*8, useHKDF)
+	}
 	ce := contentenc.New(cc, 4096)
 	return ce
 }
