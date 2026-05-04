@@ -102,6 +102,7 @@ func initDir(args *argContainer) {
 			LogN:               args.scryptn,
 			Creator:            creator,
 			AESSIV:             args.aessiv,
+			AESGEM:             args.aesgem,
 			Fido2CredentialID:  fido2CredentialID,
 			Fido2HmacSalt:      fido2HmacSalt,
 			Fido2AssertOptions: args.fido2_assert_options,
