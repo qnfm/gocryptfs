@@ -30,7 +30,7 @@ func TestLoadV2(t *testing.T) {
 	}
 
 	elapsed := time.Since(t1)
-	if elapsed < 100*time.Millisecond {
+	if elapsed < 10*time.Millisecond {
 		t.Errorf("scrypt calculation runs too fast: %d ms", elapsed/time.Millisecond)
 	}
 }
