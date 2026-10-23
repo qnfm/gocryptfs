@@ -162,6 +162,11 @@ func TestFallocate(t *testing.T) {
 		// 2x8=16 bytes more.
 		plain = plain - 16
 	}
+	if testcase.isSet("-aesgem") {
+		// aes-gem has 32 byte ivs instead of 16. 8kiB are two blocks, so
+		// 2x16=32 bytes more.
+		plain = plain - 32
+	}
 	err = syscallcompat.Fallocate(fd, FALLOC_DEFAULT, 0, plain)
 	if err != nil {
 		t.Fatal(err)
