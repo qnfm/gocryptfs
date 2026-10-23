@@ -65,6 +65,9 @@ func TestMain(m *testing.M) {
 		// Test xchacha with and without openssl
 		{false, "true", false, true, []string{"-xchacha"}},
 		{false, "false", false, true, []string{"-xchacha"}},
+		// AES-GEM (does not support openssl, Go-only backend)
+		{false, "false", false, true, []string{"-aesgem"}},
+		{true, "false", false, true, []string{"-aesgem"}},
 	}
 
 	// Make "testing.Verbose()" return the correct value
